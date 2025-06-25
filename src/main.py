@@ -1,3 +1,6 @@
+"""
+Main module for the application.
+"""
 def main():
     print("Hello, World!")
 
