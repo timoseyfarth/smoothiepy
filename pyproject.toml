@@ -1,9 +1,9 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [project]
-name = "signal_smoother"
+name = "smoothiepy"
 version = "0.1.0"
 authors = [
     {name = "Timo Seyfarth", email = "timo@seyfarth.dev"}
@@ -13,7 +13,7 @@ readme = "README.md"
 requires-python = ">=3.9.0"
 license = {text = "MIT"}
 keywords = ["python", "smoothing", "real-time", "signal-processing", "data-stream", "eye-tracking", "gaze-tracking", "sensor-data",
-    "noise-reduction", "data-smoothing", "low-latency", "live-data", "adaptive-filter", "kalman-filter", "ema", "moving-average"]
+    "noise-reduction", "data-smoothing", "low-latency", "live-data", "adaptive-filter", "kalman-filter", "ema", "moving-average", "smoothiepy"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -24,10 +24,13 @@ dependencies = [
 
 ]
 
+[tool.pdm]
+distribution = false
+
 [project.optional-dependencies]
 dev = [
     "pytest~=8.3.5",
-    "pylint~=3.3.7"
+    "pylint>=3.3.7",
 ]
 
 #[project.urls]

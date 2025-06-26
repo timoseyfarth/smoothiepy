@@ -1,8 +1,8 @@
 """
 Main module for the application.
 """
-from src.signal_filter import OffsetFilter1D
-from src.signal_smoother_builder import SmootherBuilder
+from smoothiepy.signal_filter import OffsetFilter1D
+from smoothiepy.signal_smoother_builder import SmootherBuilder
 
 
 def main() -> None:
