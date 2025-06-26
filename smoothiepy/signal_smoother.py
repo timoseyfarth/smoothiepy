@@ -2,7 +2,7 @@
 Contains the Signal Smoother class which is the main class to smooth signals.
 """
 from abc import ABC, abstractmethod
-from smoothiepy.signal_filter import Filter, Filter1D
+from signal_filter import Filter, Filter1D
 
 
 class Smoother(ABC):
@@ -76,9 +76,10 @@ class Smoother1DContinuous(Smoother1D):
         self.last_filtered_value: float | int = 0.0
 
     def build(self):
-        self.filter_list[-1].set_buffer_size(1)
-        for cur_filter, next_filter in zip(self.filter_list, self.filter_list[1:]):
-            cur_filter.set_buffer_size(next_filter.window_size)
+        pass
+        # self.filter_list[-1].set_buffer_size(1)
+        # for cur_filter, next_filter in zip(self.filter_list, self.filter_list[1:]):
+        #     cur_filter.set_buffer_size(next_filter.window_size)
 
     def add_and_get(self, data: float | int) -> float | int:
         """

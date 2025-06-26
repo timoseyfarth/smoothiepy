@@ -42,7 +42,7 @@ dev = [
 addopts = "-v --color=yes"
 python_files = "test_*.py"
 pythonpath = [
-  "."
+    "."
 ]
 
 [tool.pylint.master]
@@ -53,12 +53,13 @@ jobs = 4
 
 [tool.pylint.'MESSAGES CONTROL']
 disable = [
-  "too-few-public-methods",
-  "too-many-arguments",
-  "too-many-positional-arguments",
-  "no-member",
-  "too-many-instance-attributes",
-  "fixme"
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-positional-arguments",
+    "no-member",
+    "too-many-instance-attributes",
+    "fixme",
+    "import-error"
 ]
 
 [tool.pylint.similarities]
