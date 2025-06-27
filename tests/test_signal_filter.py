@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 
 from smoothiepy.signal_filter import (OffsetFilter1D, AverageFilter1D, GaussianAverageFilter1D,
-                                      MedianAverageFilter1D, ExponentialMovingAverageFilter1D)
+                                      MedianAverageFilter1D, ExponentialMovingAverageFilter1D,
+                                      FixationSmoothFilter1D)
 
 
 class TestOffsetFilter1D:
@@ -274,3 +275,47 @@ class TestExponentialMovingAverageFilter1D:
         ema_filter = ExponentialMovingAverageFilter1D(alpha=alpha)
         for data, expected in zip(data_list, expected_list):
             assert ema_filter.next(data) == expected
+
+
+class TestFixationSmoothingFilter1D:
+    @pytest.fixture
+    def fixation_filter(self):
+        return FixationSmoothFilter1D(window_size=3, threshold=4)
+
+    def test_invalid_window_size(self):
+        with pytest.raises(ValueError):
+            FixationSmoothFilter1D(window_size=0, threshold=4)
+
+    @pytest.mark.parametrize(
+        "data_list, expected_list",
+        [
+            ([500, 10, 100, 7, 300], [500, 10, 100, 7, 300]),
+            ([500, 10, 200, 30, 400], [500.0, 10.0, 200.0, 30.0, 400.0]),
+            ([500, -10, -200, -30, -400], [500.0, -10.0, -200.0, -30.0, -400.0]),
+            ([500, 10, 200], [500.0, 10.0, 200.0]),
+            ([500], [500.0]),
+            ([500.0, -10.0], [500.0, -10.0]),
+        ]
+    )
+    def test_fixation_smoothing_jumpy_data(self, fixation_filter, data_list, expected_list):
+        results = []
+        for data in data_list:
+            results.append(fixation_filter.next(data))
+        assert results == expected_list
+
+    @pytest.mark.parametrize(
+        "data_list, expected_list",
+        [
+            ([500, 501, 503, 500, 499], [500.0, 500.0, 500.0, 500.0, 500.0]),
+            ([500, 501, 502, 503, 502], [500.0, 500.0, 500.0, 500.0, 500.0]),
+            ([500, 501, 499, 500, 501, 499, 400, 402], [500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 400, 402.0]),
+            ([500, 501, 499, 500, 501, 499, 400, 402, 399, 400, 401],
+                [500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 400, 402.0, 399, pytest.approx(400.1111, rel=1e-2), pytest.approx(400.1111, rel=1e-2)]),
+
+        ]
+    )
+    def test_fixation_smoothing_fixation_data(self, fixation_filter, data_list, expected_list):
+        results = []
+        for data in data_list:
+            results.append(fixation_filter.next(data))
+        assert results == expected_list

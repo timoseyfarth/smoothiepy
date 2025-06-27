@@ -203,3 +203,58 @@ class ExponentialMovingAverageFilter1D(Filter1D):
         self.latest_filtered_value = ((self.alpha * buffer_data[0])
                                       + (self.__inverted_alpha * self.latest_filtered_value))
         return self.latest_filtered_value
+
+
+class FixationSmoothFilter1D(Filter1D):
+    """
+    A filter class to smooth fixation-like data in 1D.
+
+    It uses a weighted averaging mechanism in conjunction with standard deviation-based
+    thresholding to determine whether to maintain or update the fixation value. The purpose
+    of this filter is to smooth out noise while preserving significant data trends.
+
+    The noise will be reduced by checking the standard deviation of the data in the buffer
+    and comparing the latest data value with the current fixation value. If both checks pass,
+    the current fixation value is returned. Otherwise, a new fixation value is computed
+    using a weighted average of the data in the buffer.
+
+    Note that this filter cuts out noise totally. It will not smooth out noise.
+
+    An example for the threshold would be calculated using the following formula:
+    ``{screen_width_px} * 0.004 + sqrt({window_size})``.
+    Where `screen_width_px` is the width of the screen in pixels and
+    `window_size` is the size of the sliding window used for the filter.
+    This could be used for eye-tracking data to smooth out noise when you fixate on a point
+    for a longer period of time.
+
+    :ivar window_size: The size of the sliding window for the filter.
+    :type window_size: int
+    :ivar threshold: The threshold value used for standard deviation and fixation value difference
+                     checks.
+    :type threshold: float
+    :ivar fixation_value: The current fixation value being tracked by the filter.
+    :type fixation_value: float
+    :ivar average_weights: A numpy array of weights used for computing weighted averages
+                           over the input data buffer.
+    :type average_weights: numpy.ndarray
+    """
+    def __init__(self, window_size: int, threshold: float):
+        super().__init__(window_size)
+        self.threshold = threshold
+        self.fixation_value = 0.0
+        self.average_weights = np.linspace(0.2, 1.0, window_size)
+
+    def _process_next(self, buffer_data: np.array) -> float | int:
+        std_dev = np.std(buffer_data)
+        latest_data_value = buffer_data[-1]
+
+        if (abs(std_dev) <= self.threshold
+                and abs(self.fixation_value - latest_data_value) <= self.threshold):
+            return self.fixation_value
+
+        if len(buffer_data) < self.window_size:
+            offset = self.window_size - len(buffer_data)
+            self.fixation_value = np.average(buffer_data, weights=self.average_weights[offset:])
+        else:
+            self.fixation_value = np.average(buffer_data, weights=self.average_weights)
+        return latest_data_value
