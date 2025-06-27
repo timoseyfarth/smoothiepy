@@ -1,16 +1,12 @@
 """
-Contains the filters used for signal processing.
+Contains the one-dimensional filters used for signal processing.
 """
 from abc import ABC, abstractmethod
 from collections import deque
 import numpy as np
 from typing_extensions import deprecated
 
-
-class Filter(ABC):
-    """
-    Abstract base class for all signal filters.
-    """
+from smoothiepy.filter.basefilter import Filter
 
 
 class Filter1D(Filter, ABC):

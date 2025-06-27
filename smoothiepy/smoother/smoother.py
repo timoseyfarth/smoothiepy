@@ -2,7 +2,7 @@
 Contains the Signal Smoother class which is the main class to smooth signals.
 """
 from abc import ABC, abstractmethod
-from signal_filter import Filter, Filter1D
+from smoothiepy.filter.filter1d import Filter, Filter1D
 
 
 class Smoother(ABC):

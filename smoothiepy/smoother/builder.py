@@ -1,8 +1,8 @@
 """
 Contains the helper classes to build a signal smoother.
 """
-from signal_filter import Filter1D
-from signal_smoother import Smoother1DContinuous
+from smoothiepy.filter.filter1d import Filter1D
+from smoothiepy.smoother.smoother import Smoother1DContinuous
 
 
 class SmootherBuilder:

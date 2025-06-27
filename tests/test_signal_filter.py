@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from smoothiepy.signal_filter import (OffsetFilter1D, AverageFilter1D, GaussianAverageFilter1D,
-                                      MedianAverageFilter1D, ExponentialMovingAverageFilter1D,
-                                      FixationSmoothFilter1D)
+from smoothiepy.filter.filter1d import (OffsetFilter1D, AverageFilter1D, GaussianAverageFilter1D,
+                                        MedianAverageFilter1D, ExponentialMovingAverageFilter1D,
+                                        FixationSmoothFilter1D)
 
 
 class TestOffsetFilter1D:

@@ -1,8 +1,8 @@
 """
 Main module for the application.
 """
-from signal_smoother_builder import SmootherBuilder
-from signal_filter import ExponentialMovingAverageFilter1D
+from smoothiepy.smoother.builder import SmootherBuilder
+from smoothiepy.filter.filter1d import ExponentialMovingAverageFilter1D
 
 def main() -> None:
     """
