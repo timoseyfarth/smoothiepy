@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from smoothiepy.signal_filter import (OffsetFilter1D, AverageFilter1D,
-                                      GaussianAverageFilter1D, MedianAverageFilter1D,)
+from smoothiepy.signal_filter import (OffsetFilter1D, AverageFilter1D, GaussianAverageFilter1D,
+                                      MedianAverageFilter1D, ExponentialMovingAverageFilter1D)
 
 
 class TestOffsetFilter1D:
@@ -248,3 +248,29 @@ class TestMedianFilter1D:
     def test_median_filter_w5(self, median_filter_w5, data_list, expected_list):
         for data in data_list:
             assert median_filter_w5.next(data) == expected_list.pop(0)
+
+
+class TestExponentialMovingAverageFilter1D:
+    def test_invalid_alpha_below_0(self):
+        with pytest.raises(ValueError):
+            ExponentialMovingAverageFilter1D(alpha=-0.1)
+
+    def test_invalid_alpha_above_1(self):
+        with pytest.raises(ValueError):
+            ExponentialMovingAverageFilter1D(alpha=1.1)
+
+    @pytest.mark.parametrize(
+        'alpha, data_list, expected_list',
+        [
+            (0.5, [10, 20], [10.0, 15.0]),
+            (0.5, [10, 20, 30], [10.0, 15.0, 22.5]),
+            (0, [10, 30], [10.0, 10.0]),
+            (1, [10, 30], [10.0, 30.0]),
+            (0.2, [20, 60], [20.0, 28.0]),
+            (0.8, [10, 30], [10.0, 26.0]),
+        ]
+    )
+    def test_ema_filter(self, alpha, data_list, expected_list):
+        ema_filter = ExponentialMovingAverageFilter1D(alpha=alpha)
+        for data, expected in zip(data_list, expected_list):
+            assert ema_filter.next(data) == expected

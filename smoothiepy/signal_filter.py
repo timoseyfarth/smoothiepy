@@ -16,7 +16,7 @@ class Filter(ABC):
 class Filter1D(Filter, ABC):
     """
     Abstract base class for all one-dimensional signal filters.
-    :param window_size: The size of the window for the filter.
+    :param window_size: The size of the window for the filter. Must be a positive integer.
     :type window_size: int
     :ivar window_size: The size of the window for the filter.
     :type window_size: int
@@ -130,6 +130,7 @@ class GaussianAverageFilter1D(Filter1D):
     :param window_size: Size of the sliding window used for the filter.
     :type window_size: int
     :param std_dev: The standard deviation of the Gaussian distribution that determines the spread.
+        Must be a non-negative value.
     :type std_dev: float
     :raises ValueError: If std_dev is negative.
     """
@@ -170,4 +171,35 @@ class GaussianAverageFilter1D(Filter1D):
 
 class MedianAverageFilter1D(Filter1D):
     def _process_next(self, buffer_data: np.array) -> float | int:
-        return np.median(buffer_data)
+        return np.median(buffer_data).astype(float)
+
+
+class ExponentialMovingAverageFilter1D(Filter1D):
+    """
+    Implements a one-dimensional exponential moving average filter.
+
+    This filter applies exponential moving average weights
+     to the current and the previous filtered data point.
+    The smoothing factor (alpha) determines the weight given to the most recent data point
+    compared to the previous filtered value.
+
+    :ivar alpha: The smoothing factor. Must be between 0 and 1 (inclusive).
+    :type alpha: float
+    """
+    def __init__(self, alpha: float):
+        super().__init__(window_size=1)
+        if not 0 <= alpha <= 1:
+            raise ValueError("Alpha must be between 0 and 1")
+
+        self.alpha = alpha
+        self.__inverted_alpha = 1 - alpha
+        self.latest_filtered_value: float | int = 0.0
+
+    def _process_next(self, buffer_data: np.array) -> float | int:
+        if not self.latest_filtered_value:
+            self.latest_filtered_value = buffer_data[0]
+            return buffer_data[0]
+
+        self.latest_filtered_value = ((self.alpha * buffer_data[0])
+                                      + (self.__inverted_alpha * self.latest_filtered_value))
+        return self.latest_filtered_value
