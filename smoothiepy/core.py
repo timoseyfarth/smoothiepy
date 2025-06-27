@@ -1,8 +1,8 @@
 """
 Main module for the application.
 """
-from signal_filter import AverageFilter1D
 from signal_smoother_builder import SmootherBuilder
+from signal_filter import MedianAverageFilter1D
 
 def main() -> None:
     """
@@ -12,7 +12,7 @@ def main() -> None:
         SmootherBuilder()
         .one_dimensional()
         .set_continuous()
-        .attach_filter(AverageFilter1D(window_size=2))
+        .attach_filter(MedianAverageFilter1D(window_size=3))
         .build()
     )
 
