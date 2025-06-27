@@ -4,6 +4,7 @@ Contains the filters used for signal processing.
 from abc import ABC, abstractmethod
 from collections import deque
 import numpy as np
+from typing_extensions import deprecated
 
 
 class Filter(ABC):
@@ -19,8 +20,11 @@ class Filter1D(Filter, ABC):
     :type window_size: int
     :ivar window_size: The size of the window for the filter.
     :type window_size: int
+    :raises ValueError: If window_size is not a positive integer.
     """
     def __init__(self, window_size: int):
+        if window_size <= 0:
+            raise ValueError("window_size must be greater than 0")
         self.window_size = window_size
         self.buffer = deque(maxlen=window_size)
         self.latest_removed_buffer_value: float | int = 0.0
@@ -51,6 +55,7 @@ class Filter1D(Filter, ABC):
         """
 
 
+@deprecated("Filter has no use, why would you use it?")
 class UselessFilter1D(Filter1D):
     """
     A filter that does not perform any filtering.
@@ -84,6 +89,9 @@ class AverageFilter1D(Filter1D):
     No weighting is applied, and the average is computed
     as a simple arithmetic mean of the values in the buffer.
 
+    If not enough data points are available to fill the window,
+    it computes the average of the available data points.
+
     :param window_size: The size of the window for averaging.
     :type window_size: int
     """
@@ -112,6 +120,10 @@ class GaussianAverageFilter1D(Filter1D):
     recent values of the window while progressively down-weighting values farther away.
     The Gaussian distribution is controlled via the window size and standard deviation parameters.
 
+     If not enough data points are available to fill the window,
+    it computes the gaussian average of the available data points with
+    a trimmed gaussian filter.
+
     The filter is only relying on previous data values in the buffer, not future values
      which would result in a delay / offset in the output.
 
@@ -119,18 +131,22 @@ class GaussianAverageFilter1D(Filter1D):
     :type window_size: int
     :param std_dev: The standard deviation of the Gaussian distribution that determines the spread.
     :type std_dev: float
+    :raises ValueError: If std_dev is negative.
     """
     def __init__(self, window_size: int, std_dev: float):
         super().__init__(window_size)
+        if std_dev < 0:
+            raise ValueError("std_dev must be a non-negative value")
+
         self.std_dev = std_dev
         self.__gaussian_weights = self.__construct_gaussian_weights()
         self.__gaussian_weights_sum = self.__gaussian_weights.sum()
-        print(f"Gaussian weights: {self.__gaussian_weights}")
 
     def _process_next(self, buffer_data: np.array) -> float | int:
         if len(buffer_data) < self.window_size:
-            weighted_sum = np.sum(buffer_data * self.__gaussian_weights[:len(buffer_data)])
-            cur_gaussian_weights_sum = self.__gaussian_weights[:len(buffer_data)].sum()
+            offset = self.window_size - len(buffer_data)
+            weighted_sum = np.sum(buffer_data * self.__gaussian_weights[offset:])
+            cur_gaussian_weights_sum = self.__gaussian_weights[offset:].sum()
             return weighted_sum / cur_gaussian_weights_sum
 
         weighted_sum = np.sum(buffer_data * self.__gaussian_weights)
@@ -148,7 +164,6 @@ class GaussianAverageFilter1D(Filter1D):
         """
         lin_space = np.linspace(self.window_size, 0, self.window_size) \
             if self.window_size % 2 == 0 else np.linspace(self.window_size, 0, self.window_size)
-        print(lin_space)
         gaussian = np.exp(-0.5 * (lin_space / self.std_dev) ** 2)
         return gaussian
 
