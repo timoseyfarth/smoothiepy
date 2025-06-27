@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A lightweight Python library for smoothing real-time data streams like eye tracking or sensor input."
 readme = "README.md"
-requires-python = ">=3.9.0"
+requires-python = ">=3.10.0"
 license = {text = "MIT"}
 keywords = ["python", "smoothing", "real-time", "signal-processing", "data-stream", "eye-tracking", "gaze-tracking", "sensor-data",
     "noise-reduction", "data-smoothing", "low-latency", "live-data", "adaptive-filter", "kalman-filter", "ema", "moving-average", "smoothiepy"]
