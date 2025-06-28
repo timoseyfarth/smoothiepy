@@ -20,8 +20,8 @@ class UselessFilter1D(Filter1D):
     def __init__(self):
         super().__init__(window_size=1)
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        return buffer_data[0]
+    def _process_next(self, buffer: np.array) -> float | int:
+        return buffer[0]
 
 
 class OffsetFilter1D(Filter1D):
@@ -35,8 +35,8 @@ class OffsetFilter1D(Filter1D):
         super().__init__(window_size=1)
         self.offset = offset
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        return buffer_data[0] + self.offset
+    def _process_next(self, buffer: np.array) -> float | int:
+        return buffer[0] + self.offset
 
 
 class KernelMovingAverageFilter1D(Filter1D, ABC):
@@ -60,14 +60,16 @@ class KernelMovingAverageFilter1D(Filter1D, ABC):
         self.weights = self._construct_weights()
         self.weights_sum = self.weights.sum()
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        if len(buffer_data) < self.window_size:
-            offset = self.window_size - len(buffer_data)
-            weighted_sum = np.sum(buffer_data * self.weights[offset:])
+    def _process_next(self, buffer: np.array) -> float | int:
+        if len(buffer) < self.window_size:
+            offset = self.window_size - len(buffer)
+            weighted_sum = np.sum(buffer * self.weights[offset:])
             cur_weights_sum = self.weights[offset:].sum()
+            if cur_weights_sum == 0:
+                return 0.0
             return weighted_sum / cur_weights_sum
 
-        weighted_sum = np.sum(buffer_data * self.weights)
+        weighted_sum = np.sum(buffer * self.weights)
         return weighted_sum / self.weights_sum
 
     @abstractmethod
@@ -134,13 +136,15 @@ class GaussianAverageFilter1D(KernelMovingAverageFilter1D):
     :param window_size: Size of the sliding window used for the filter.
     :type window_size: int
     :param std_dev: The standard deviation of the Gaussian distribution that determines the spread.
-        Must be a non-negative value.
+        Must be a positive value.
     :type std_dev: float
     :raises ValueError: If std_dev is negative.
     """
-    def __init__(self, window_size: int, std_dev: float):
-        if std_dev < 0:
-            raise ValueError("std_dev must be a non-negative value")
+    def __init__(self, window_size: int, std_dev: float = None):
+        if std_dev is None:
+            std_dev = window_size / 3
+        if std_dev <= 0:
+            raise ValueError("std_dev must be a positive value")
         self.std_dev = std_dev
         super().__init__(window_size)
 
@@ -161,8 +165,8 @@ class GaussianAverageFilter1D(KernelMovingAverageFilter1D):
 
 
 class MedianAverageFilter1D(Filter1D):
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        return np.median(buffer_data).astype(float)
+    def _process_next(self, buffer: np.array) -> float | int:
+        return np.median(buffer).astype(float)
 
 
 class ExponentialMovingAverageFilter1D(Filter1D):
@@ -186,12 +190,12 @@ class ExponentialMovingAverageFilter1D(Filter1D):
         self.__inverted_alpha = 1 - alpha
         self.latest_filtered_value: float | int = 0.0
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
+    def _process_next(self, buffer: np.array) -> float | int:
         if not self.latest_filtered_value:
-            self.latest_filtered_value = buffer_data[0]
-            return buffer_data[0]
+            self.latest_filtered_value = buffer[0]
+            return buffer[0]
 
-        self.latest_filtered_value = ((self.alpha * buffer_data[0])
+        self.latest_filtered_value = ((self.alpha * buffer[0])
                                       + (self.__inverted_alpha * self.latest_filtered_value))
         return self.latest_filtered_value
 
@@ -211,9 +215,9 @@ class CumulativeMovingAverageFilter1D(Filter1D):
         self.cumulative_average = 0.0
         self.count = 0
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
+    def _process_next(self, buffer: np.array) -> float | int:
         self.count += 1
-        self.cumulative_average += (buffer_data[0] - self.cumulative_average) / self.count
+        self.cumulative_average += (buffer[0] - self.cumulative_average) / self.count
         return self.cumulative_average
 
 
@@ -256,19 +260,19 @@ class FixationSmoothFilter1D(Filter1D):
         self.fixation_value = 0.0
         self.average_weights = np.linspace(0.2, 1.0, window_size)
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        std_dev = np.std(buffer_data)
-        latest_data_value = buffer_data[-1]
+    def _process_next(self, buffer: np.array) -> float | int:
+        std_dev = np.std(buffer)
+        latest_data_value = buffer[-1]
 
         if (abs(std_dev) <= self.threshold
                 and abs(self.fixation_value - latest_data_value) <= self.threshold):
             return self.fixation_value
 
-        if len(buffer_data) < self.window_size:
-            offset = self.window_size - len(buffer_data)
-            self.fixation_value = np.average(buffer_data, weights=self.average_weights[offset:])
+        if len(buffer) < self.window_size:
+            offset = self.window_size - len(buffer)
+            self.fixation_value = np.average(buffer, weights=self.average_weights[offset:])
         else:
-            self.fixation_value = np.average(buffer_data, weights=self.average_weights)
+            self.fixation_value = np.average(buffer, weights=self.average_weights)
         return latest_data_value
 
 
@@ -295,6 +299,7 @@ class MultiPassMovingAverage1D(Filter1D):
             raise ValueError("num_passes must be greater than 0")
 
         self.num_passes = num_passes
+        self.average_filter_type = average_filter_type
 
         smoother = (
             SmootherBuilder()
@@ -315,5 +320,5 @@ class MultiPassMovingAverage1D(Filter1D):
                 raise ValueError(f"Unsupported average filter type: {average_filter_type}")
         self.smoother = smoother.build()
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        return self.smoother.add_and_get(buffer_data[0])
+    def _process_next(self, buffer: np.array) -> float | int:
+        return self.smoother.add_and_get(buffer[0])
