@@ -1,7 +1,7 @@
 """
 Contains the helper classes to build a signal smoother.
 """
-from smoothiepy.filter.filter1d import Filter1D
+from smoothiepy.filter.basefilter import Filter1D
 from smoothiepy.smoother.smoother import Smoother1DContinuous
 
 

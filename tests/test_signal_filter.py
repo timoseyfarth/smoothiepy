@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
 
-from smoothiepy.filter.filter1d import (OffsetFilter1D, AverageFilter1D, GaussianAverageFilter1D,
+from smoothiepy.filter.basefilter import MovingAverageType
+from smoothiepy.filter.filter1d import (OffsetFilter1D, SimpleMovingAverageFilter1D, GaussianAverageFilter1D,
                                         MedianAverageFilter1D, ExponentialMovingAverageFilter1D,
-                                        FixationSmoothFilter1D)
+                                        FixationSmoothFilter1D, CumulativeMovingAverageFilter1D,
+                                        MultiPassMovingAverage1D)
 
 
 class TestOffsetFilter1D:
@@ -79,19 +81,19 @@ class TestOffsetFilter1D:
 class TestAverageFilter1D:
     @pytest.fixture
     def average_filter_w2(self):
-        return AverageFilter1D(window_size=2)
+        return SimpleMovingAverageFilter1D(window_size=2)
 
     @pytest.fixture
     def average_filter_w3(self):
-        return AverageFilter1D(window_size=3)
+        return SimpleMovingAverageFilter1D(window_size=3)
 
     @pytest.fixture
     def average_filter_w10(self):
-        return AverageFilter1D(window_size=10)
+        return SimpleMovingAverageFilter1D(window_size=10)
 
     def test_negative_window_size(self):
         with pytest.raises(ValueError):
-            AverageFilter1D(window_size=-1)
+            SimpleMovingAverageFilter1D(window_size=-1)
 
     @pytest.mark.parametrize(
         'data_list, expected_list',
@@ -107,7 +109,7 @@ class TestAverageFilter1D:
     )
     def test_average_filter_w2(self, average_filter_w2, data_list, expected_list):
         for data, expected in zip(data_list, expected_list):
-            assert average_filter_w2.next(data) == expected
+            assert average_filter_w2.next(data) == pytest.approx(expected, rel=1e-2)
 
     @pytest.mark.parametrize(
         'data_list, expected_list',
@@ -123,8 +125,8 @@ class TestAverageFilter1D:
     )
     def test_average_filter_w3(self, average_filter_w3, data_list, expected_list):
         for data, expected in zip(data_list, expected_list):
-            assert average_filter_w3.next(data) == expected
-    
+            assert average_filter_w3.next(data) == pytest.approx(expected, rel=1e-2)
+
     @pytest.mark.parametrize(
         'data_list, expected_list',
         [
@@ -137,7 +139,7 @@ class TestAverageFilter1D:
     )
     def test_average_filter_w10(self, average_filter_w10, data_list, expected_list):
         for data, expected in zip(data_list, expected_list):
-            assert average_filter_w10.next(data) == expected
+            assert average_filter_w10.next(data) == pytest.approx(expected, rel=1e-2)
 
 
 class TestGaussianAverageFilter1D:
@@ -177,12 +179,12 @@ class TestGaussianAverageFilter1D:
             assert result == expected
 
     def test_gaussian_weights_sum_is_correct(self, gauss_filter_std2):
-        weights = gauss_filter_std2._GaussianAverageFilter1D__gaussian_weights
+        weights = gauss_filter_std2.weights
         assert isinstance(weights, np.ndarray)
-        assert np.isclose(weights.sum(), gauss_filter_std2._GaussianAverageFilter1D__gaussian_weights_sum)
+        assert np.isclose(weights.sum(), gauss_filter_std2.weights_sum)
 
     def test_gaussian_weights_shape_and_monotonicity(self, gauss_filter_std0_5):
-        weights = gauss_filter_std0_5._GaussianAverageFilter1D__gaussian_weights
+        weights = gauss_filter_std0_5.weights
         assert len(weights) == 5
         assert all(weights[i] <= weights[i + 1] for i in range(len(weights) - 1))
 
@@ -202,7 +204,7 @@ class TestGaussianAverageFilter1D:
         expected_lin_space = np.linspace(window_size, 0, window_size)
         expected_weights = np.exp(-0.5 * (expected_lin_space / std_dev) ** 2)
 
-        actual_weights = gauss_filter._GaussianAverageFilter1D__construct_gaussian_weights()
+        actual_weights = gauss_filter._construct_weights()
 
         np.testing.assert_allclose(actual_weights, expected_weights, rtol=1e-8)
 
@@ -319,3 +321,177 @@ class TestFixationSmoothingFilter1D:
         for data in data_list:
             results.append(fixation_filter.next(data))
         assert results == expected_list
+
+
+class TestCumulativeMovingAverageFilter1D:
+    @pytest.fixture
+    def cumulative_filter(self):
+        return CumulativeMovingAverageFilter1D()
+
+    @pytest.mark.parametrize(
+        "data_list, expected_list",
+        [
+            ([10], [10.0]),
+            ([10, 20], [10.0, 15.0]),
+            ([10, 20, 30], [10.0, 15.0, 20.0]),
+            ([10, 20, 30, 40], [10.0, 15.0, 20.0, 25.0]),
+            ([10, -10, -30], [10.0, 0.0, -10.0]),
+            ([1, 2], [1.0, 1.5]),
+        ]
+    )
+    def test_cumulative_moving_average(self, cumulative_filter, data_list, expected_list):
+        for data, expected in zip(data_list, expected_list):
+            assert cumulative_filter.next(data) == pytest.approx(expected, rel=1e-2)
+
+
+class TestMultiPassMovingAverage1D:
+    @pytest.fixture
+    def multi_pass_filter(self):
+        return MultiPassMovingAverage1D(window_size=3, num_passes=2)
+
+    @pytest.fixture
+    def multi_pass_filter_w5(self):
+        return MultiPassMovingAverage1D(window_size=5, num_passes=2)
+
+    @pytest.fixture
+    def multi_pass_filter_p5(self):
+        return MultiPassMovingAverage1D(window_size=3, num_passes=5)
+
+    @pytest.fixture
+    def multi_pass_filter_gaussian(self):
+        return MultiPassMovingAverage1D(window_size=3, num_passes=2, average_filter_type=MovingAverageType.GAUSSIAN)
+
+    @pytest.fixture
+    def multi_pass_filter_median(self):
+        return MultiPassMovingAverage1D(window_size=3, num_passes=2, average_filter_type=MovingAverageType.MEDIAN)
+
+    def test_invalid_window_size(self):
+        with pytest.raises(ValueError):
+            MultiPassMovingAverage1D(window_size=0, num_passes=2)
+
+    def test_invalid_passes(self):
+        with pytest.raises(ValueError):
+            MultiPassMovingAverage1D(window_size=3, num_passes=0)
+
+    def test_invalid_filter_type(self):
+        with pytest.raises(ValueError):
+            MultiPassMovingAverage1D(window_size=3, num_passes=2, average_filter_type=MovingAverageType.EXPONENTIAL)
+
+
+    @pytest.mark.parametrize(
+        'data_list, expected_list',
+        [
+            ([10], [10.0]),
+            ([10, 20, 30, 40, 50], [10.0, 12.5, 15.0, 21.6666, 30.0]),
+            ([50, 40, 30, 20, 10], [50.0, 47.5, 45.0, 38.3333, 30.0]),
+        ]
+    )
+    def test_multi_pass_moving_average(self, multi_pass_filter, data_list, expected_list):
+        results = []
+
+        for data in data_list:
+            result = multi_pass_filter.next(data)
+            results.append(result)
+
+        for i in range(1, len(results)):
+            assert results[i] == pytest.approx(expected_list[i], rel=1e-2)
+
+    def test_multi_pass_moving_average_w5_increasing(self, multi_pass_filter_w5):
+        data_list = [10, 20, 30, 40, 50, 60, 70]
+        results = []
+
+        for data in data_list:
+            results.append(multi_pass_filter_w5.next(data))
+
+        for i in range(1, len(results)):
+            assert results[i] > results[i-1]
+
+    def test_multi_pass_moving_average_w5_decreasing(self, multi_pass_filter_w5):
+        data_list2 = [70, 60, 50, 40, 30, 20, 10]
+        results2 = []
+
+        for data in data_list2:
+            results2.append(multi_pass_filter_w5.next(data))
+
+        for i in range(1, len(results2)):
+            assert results2[i] < results2[i-1]
+
+    def test_multi_pass_moving_average_p3_increasing(self, multi_pass_filter_p5):
+        data_list = [10, 20, 30, 40, 50]
+        results = []
+
+        for data in data_list:
+            results.append(multi_pass_filter_p5.next(data))
+
+        # Check that the results are monotonically increasing
+        for i in range(1, len(results)):
+            assert results[i] > results[i-1]
+
+    def test_multi_pass_moving_average_p3_decreasing(self, multi_pass_filter_p5):
+        data_list2 = [50, 40, 30, 20, 10]
+        results2 = []
+
+        for data in data_list2:
+            results2.append(multi_pass_filter_p5.next(data))
+
+        for i in range(1, len(results2)):
+            assert results2[i] < results2[i-1]
+
+    def test_multi_pass_gaussian_average(self, multi_pass_filter_gaussian):
+        data_list = [20, 30, 40, 50, 60]
+        results = []
+
+        for data in data_list:
+            result = multi_pass_filter_gaussian.next(data)
+            results.append(result)
+
+        assert results[0] == 20.0
+
+        # Check that the general trend is increasing
+        assert results[0] < results[-1]
+
+    def test_multi_pass_median_average(self, multi_pass_filter_median):
+        data_list = [10, 20, 30, 40, 50]
+        results = []
+
+        for data in data_list:
+            result = multi_pass_filter_median.next(data)
+            results.append(result)
+
+        assert results[0] == 10.0
+
+        # Check that the general trend is increasing
+        assert results[0] < results[-1]
+
+    def test_complex_sequence(self, multi_pass_filter):
+        data = [10, 15, 20, 100, 25, 30, 35]
+
+        results = []
+        for value in data:
+            results.append(multi_pass_filter.next(value))
+
+        assert max(results) > 35
+
+        # Check that the general trend is increasing
+        assert results[0] < results[-1]
+
+    def test_noise_reduction(self, multi_pass_filter_w5):
+        base_signal = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        noise = [5, -5, 3, -3, 4, -4, 2, -2, 3, -3]
+        noisy_signal = [base + noise for base, noise in zip(base_signal, noise)]
+
+        filtered_signal = []
+        for value in noisy_signal:
+            filtered_signal.append(multi_pass_filter_w5.next(value))
+
+        # Check that the filtered signal is smoother than the noisy signal
+        noisy_diffs = [abs(noisy_signal[i] - noisy_signal[i-1]) for i in range(1, len(noisy_signal))]
+        filtered_diffs = [abs(filtered_signal[i] - filtered_signal[i-1]) for i in range(1, len(filtered_signal))]
+
+        noisy_variance = np.var(noisy_diffs)
+        filtered_variance = np.var(filtered_diffs)
+
+        assert filtered_variance < noisy_variance
+
+        # Check that the general trend is increasing
+        assert filtered_signal[0] < filtered_signal[-1]

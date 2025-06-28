@@ -2,54 +2,14 @@
 Contains the one-dimensional filters used for signal processing.
 """
 from abc import ABC, abstractmethod
-from collections import deque
 import numpy as np
 from typing_extensions import deprecated
 
-from smoothiepy.filter.basefilter import Filter
+from smoothiepy.filter.basefilter import MovingAverageType, Filter1D
+from smoothiepy.smoother.builder import SmootherBuilder
 
 
-class Filter1D(Filter, ABC):
-    """
-    Abstract base class for all one-dimensional signal filters.
-    :param window_size: The size of the window for the filter. Must be a positive integer.
-    :type window_size: int
-    :ivar window_size: The size of the window for the filter.
-    :type window_size: int
-    :raises ValueError: If window_size is not a positive integer.
-    """
-    def __init__(self, window_size: int):
-        if window_size <= 0:
-            raise ValueError("window_size must be greater than 0")
-        self.window_size = window_size
-        self.buffer = deque(maxlen=window_size)
-        self.latest_removed_buffer_value: float | int = 0.0
-
-    def next(self, data: float | int) -> float | int:
-        """
-        Processes the next data point by adding it to the buffer
-        and calling the internal processing method.
-
-        :param data: The next data point to be processed.
-        :type data: float | int
-        :return: The filtered value.
-        :rtype: float | int
-        """
-        self.latest_removed_buffer_value = self.buffer[0] if self.buffer else 0.0
-        self.buffer.append(data)
-        return self._process_next(np.array(self.buffer))
-
-    @abstractmethod
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        """
-        Processes the next data point using the current buffer data.
-
-        :param buffer_data: The current buffer data.
-        :type buffer_data: list[float | int]
-        :return: The processed value.
-        :rtype: float | int
-        """
-
+# TODO versions for list data -> also account for future data
 
 @deprecated("Filter has no use, why would you use it?")
 class UselessFilter1D(Filter1D):
@@ -79,7 +39,53 @@ class OffsetFilter1D(Filter1D):
         return buffer_data[0] + self.offset
 
 
-class AverageFilter1D(Filter1D):
+class KernelMovingAverageFilter1D(Filter1D, ABC):
+    """
+    KernelMovingAverageFilter1D is an abstract base class that implements a kernel-based moving
+    average filter in one dimension.
+
+    This class processes data using weights constructed for the filter,
+    providing a weighted average over a defined window size. The weights are
+    normalized automatically during processing.
+
+    :ivar weights: Weights for the kernel moving average filter, calculated by
+        the `_construct_weights` method.
+    :type weights: np.array
+    :ivar weights_sum: Precomputed sum of the weights, used for normalization in
+        the filtering process.
+    :type weights_sum: float
+    """
+    def __init__(self, window_size: int):
+        super().__init__(window_size)
+        self.weights = self._construct_weights()
+        self.weights_sum = self.weights.sum()
+
+    def _process_next(self, buffer_data: np.array) -> float | int:
+        if len(buffer_data) < self.window_size:
+            offset = self.window_size - len(buffer_data)
+            weighted_sum = np.sum(buffer_data * self.weights[offset:])
+            cur_weights_sum = self.weights[offset:].sum()
+            return weighted_sum / cur_weights_sum
+
+        weighted_sum = np.sum(buffer_data * self.weights)
+        return weighted_sum / self.weights_sum
+
+    @abstractmethod
+    def _construct_weights(self) -> np.array:
+        """
+        Constructs the weights for the kernel moving average filter.
+        This method should be implemented by subclasses to define
+        how the weights are calculated based on the window size.
+
+        The weights don't have to sum up to 1, they are normalized
+        during the processing step.
+
+        :return: An array of weights for the kernel moving average filter.
+        :rtype: np.array
+        """
+
+
+class SimpleMovingAverageFilter1D(KernelMovingAverageFilter1D):
     """
     A filter that computes the average of the input data over a specified window size.
     No weighting is applied, and the average is computed
@@ -88,26 +94,28 @@ class AverageFilter1D(Filter1D):
     If not enough data points are available to fill the window,
     it computes the average of the available data points.
 
-    :param window_size: The size of the window for averaging.
+    :ivar window_size: The size of the window for averaging.
     :type window_size: int
     """
-    def __init__(self, window_size: int):
-        super().__init__(window_size)
-        self.sum = 0
-        self.count = 0
+    def _construct_weights(self) -> np.array:
+        return np.ones(self.window_size) / self.window_size
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        self.sum += buffer_data[-1]
+class WeightedMovingAverageFilter1D(KernelMovingAverageFilter1D):
+    """
+    A filter that computes a weighted average of the input data over a specified window size.
+    The weights are linearly decreasing from 1 to 0, applied to the most recent data points.
 
-        if self.count < self.window_size:
-            self.count += 1
-            return self.sum / self.count
+    If not enough data points are available to fill the window,
+    it computes the weighted average of the available data points.
 
-        self.sum -= self.latest_removed_buffer_value
-        return self.sum / self.window_size
+    :ivar window_size: The size of the sliding window used for the filter.
+    :type window_size: int
+    """
+    def _construct_weights(self) -> np.array:
+        return np.linspace(1, 0, self.window_size)
 
 
-class GaussianAverageFilter1D(Filter1D):
+class GaussianAverageFilter1D(KernelMovingAverageFilter1D):
     """
     Implements a Gaussian Average Filter for one-dimensional data.
 
@@ -131,25 +139,12 @@ class GaussianAverageFilter1D(Filter1D):
     :raises ValueError: If std_dev is negative.
     """
     def __init__(self, window_size: int, std_dev: float):
-        super().__init__(window_size)
         if std_dev < 0:
             raise ValueError("std_dev must be a non-negative value")
-
         self.std_dev = std_dev
-        self.__gaussian_weights = self.__construct_gaussian_weights()
-        self.__gaussian_weights_sum = self.__gaussian_weights.sum()
+        super().__init__(window_size)
 
-    def _process_next(self, buffer_data: np.array) -> float | int:
-        if len(buffer_data) < self.window_size:
-            offset = self.window_size - len(buffer_data)
-            weighted_sum = np.sum(buffer_data * self.__gaussian_weights[offset:])
-            cur_gaussian_weights_sum = self.__gaussian_weights[offset:].sum()
-            return weighted_sum / cur_gaussian_weights_sum
-
-        weighted_sum = np.sum(buffer_data * self.__gaussian_weights)
-        return weighted_sum / self.__gaussian_weights_sum
-
-    def __construct_gaussian_weights(self) -> np.array:
+    def _construct_weights(self) -> np.array:
         """
         Constructs Gaussian weights based on the specified window size
         and standard deviation.The weights are not centered around zero,
@@ -201,9 +196,30 @@ class ExponentialMovingAverageFilter1D(Filter1D):
         return self.latest_filtered_value
 
 
+class CumulativeMovingAverageFilter1D(Filter1D):
+    """
+    Implements a one-dimensional cumulative moving average filter.
+
+    This filter computes the cumulative average of the input data points
+    as they are processed, updating the average with each new data point.
+
+    :ivar cumulative_average: The current cumulative average of the input data.
+    :type cumulative_average: float | int
+    """
+    def __init__(self):
+        super().__init__(window_size=1)
+        self.cumulative_average = 0.0
+        self.count = 0
+
+    def _process_next(self, buffer_data: np.array) -> float | int:
+        self.count += 1
+        self.cumulative_average += (buffer_data[0] - self.cumulative_average) / self.count
+        return self.cumulative_average
+
+
 class FixationSmoothFilter1D(Filter1D):
     """
-    A filter class to smooth fixation-like data in 1D.
+    A filter class to smooth fixation-like data in 1D. This is a type of deadband filter.
 
     It uses a weighted averaging mechanism in conjunction with standard deviation-based
     thresholding to determine whether to maintain or update the fixation value. The purpose
@@ -254,3 +270,50 @@ class FixationSmoothFilter1D(Filter1D):
         else:
             self.fixation_value = np.average(buffer_data, weights=self.average_weights)
         return latest_data_value
+
+
+class MultiPassMovingAverage1D(Filter1D):
+    """
+    This class implements a one-dimensional multi-pass moving average filter.
+
+    The MultiPassMovingAverage1D class applies a user-defined number of passes
+    over the data using the specified moving average filter type. It allows
+    different types of moving averages, such as simple, weighted, Gaussian,
+    and median.
+
+    :param window_size: The size of the sliding window for the filter.
+    :type window_size: int
+    :param num_passes: Number of passes to apply to the moving average filter.
+    :type num_passes: int
+    :param average_filter_type: The type of moving average filter to use.
+    :type average_filter_type: MovingAverageType
+    """
+    def __init__(self, window_size: int, num_passes: int,
+                 average_filter_type: MovingAverageType = MovingAverageType.SIMPLE):
+        super().__init__(window_size=1)
+        if num_passes <= 0:
+            raise ValueError("num_passes must be greater than 0")
+
+        self.num_passes = num_passes
+
+        smoother = (
+            SmootherBuilder()
+                .one_dimensional()
+                .set_continuous()
+            )
+        for _ in range(num_passes):
+            if average_filter_type == MovingAverageType.SIMPLE:
+                smoother.attach_filter(SimpleMovingAverageFilter1D(window_size))
+            elif average_filter_type == MovingAverageType.WEIGHTED:
+                smoother.attach_filter(WeightedMovingAverageFilter1D(window_size))
+            elif average_filter_type == MovingAverageType.GAUSSIAN:
+                smoother.attach_filter(GaussianAverageFilter1D(window_size,
+                                                               std_dev=window_size / 3))
+            elif average_filter_type == MovingAverageType.MEDIAN:
+                smoother.attach_filter(MedianAverageFilter1D(window_size))
+            else:
+                raise ValueError(f"Unsupported average filter type: {average_filter_type}")
+        self.smoother = smoother.build()
+
+    def _process_next(self, buffer_data: np.array) -> float | int:
+        return self.smoother.add_and_get(buffer_data[0])
