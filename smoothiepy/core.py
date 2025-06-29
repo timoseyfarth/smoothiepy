@@ -11,7 +11,7 @@ def main() -> None:
     smoother = (
         SmootherBuilder()
         .one_dimensional()
-        .set_continuous()
+        .continuous()
         .attach_filter(ExponentialMovingAverageFilter1D(alpha=0.25))
         .build()
     )

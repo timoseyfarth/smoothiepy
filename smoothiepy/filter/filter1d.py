@@ -304,7 +304,7 @@ class MultiPassMovingAverage1D(Filter1D):
         smoother = (
             SmootherBuilder()
                 .one_dimensional()
-                .set_continuous()
+                .continuous()
             )
         for _ in range(num_passes):
             if average_filter_type == MovingAverageType.SIMPLE:

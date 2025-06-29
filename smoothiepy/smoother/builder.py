@@ -1,8 +1,8 @@
 """
 Contains the helper classes to build a signal smoother.
 """
-from smoothiepy.filter.basefilter import Filter1D
-from smoothiepy.smoother.smoother import Smoother1DContinuous
+from smoothiepy.filter.basefilter import Filter1D, Filter2D
+from smoothiepy.smoother.smoother import Smoother1DContinuous, Smoother2DContinuous
 
 
 class SmootherBuilder:
@@ -17,11 +17,17 @@ class SmootherBuilder:
     def one_dimensional() -> 'Smoother1DBuilder':
         return Smoother1DBuilder()
 
-    def set_dimensions(self, dimensions: int) -> 'Smoother1DBuilder':
+    @staticmethod
+    def two_dimensional() -> 'Smoother2DBuilder':
+        return Smoother2DBuilder()
+
+    def set_dimensions(self, dimensions: int) -> 'Smoother1DBuilder | Smoother2DBuilder':
         if dimensions == 1:
             return self.one_dimensional()
+        if dimensions == 2:
+            return self.two_dimensional()
 
-        raise ValueError("Unsupported dimensions. Currently only 1D is supported.")
+        raise ValueError("Unsupported dimensions. Currently only 1D and 2D is supported.")
 
 
 class Smoother1DBuilder:
@@ -34,8 +40,22 @@ class Smoother1DBuilder:
     methods.
     """
     @staticmethod
-    def set_continuous() -> 'Smoother1DContinuousBuilder':
+    def continuous() -> 'Smoother1DContinuousBuilder':
         return Smoother1DContinuousBuilder()
+
+
+class Smoother2DBuilder:
+    """
+    Provides a builder for creating 2D signal smoother instances.
+
+    This class offers static methods to initialize builders for smoothing
+    operations tailored to different types of data. It simplifies the
+    creation of signal smoother objects by providing predefined builder
+    methods.
+    """
+    @staticmethod
+    def set_continuous() -> 'Smoother2DContinuousBuilder':
+        return Smoother2DContinuousBuilder()
 
 
 class Smoother1DContinuousBuilder:
@@ -54,6 +74,26 @@ class Smoother1DContinuousBuilder:
         return self
 
     def build(self) -> Smoother1DContinuous:
+        self.__smoother.build()
+        return self.__smoother
+
+
+class Smoother2DContinuousBuilder:
+    """
+    A builder class for creating 2D continuous signal smoother.
+
+    This class facilitates the creation and configuration of a 2D continuous
+    signal smoother by allowing filters to be attached and then constructing
+    the smoother object.
+    """
+    def __init__(self):
+        self.__smoother = Smoother2DContinuous()
+
+    def attach_filter(self, filter_obj: Filter2D) -> 'Smoother2DContinuousBuilder':
+        self.__smoother.attach_filter(filter_obj)
+        return self
+
+    def build(self) -> Smoother2DContinuous:
         self.__smoother.build()
         return self.__smoother
 
