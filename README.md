@@ -115,6 +115,7 @@ Coming soon...
 #### Filters
 
 - `Filter1D`: Base class for one-dimensional filters
+  - `OffsetFilter1D`: Adds a constant offset
   - `SimpleMovingAverageFilter1D`: Simple arithmetic mean
   - `WeightedMovingAverageFilter1D`: Linearly decreasing weights
   - `GaussianAverageFilter1D`: Gaussian weighting function
@@ -125,13 +126,23 @@ Coming soon...
   - `MultiPassMovingAverage1D`: Multiple passes of a specified filter
 
 - `Filter2D`: Base class for two-dimensional filters
-  - Various 2D filter implementations
+  - `OffsetFilter2D`: Adds a constant offset in 2D
+  - `SimpleMovingAverageFilter2D`: Simple arithmetic mean in 2D
+  - `WeightedMovingAverageFilter2D`: Linearly decreasing weights in 2D
+  - `GaussianAverageFilter2D`: Gaussian weighting function in 2D
+  - `MedianAverageFilter2D`: Median of values in 2D
+  - `ExponentialMovingAverageFilter2D`: Exponential weighting in 2D
+  - `CumulativeMovingAverageFilter2D`: Cumulative average in 2D
+  - `FixationSmoothFilter2D`: For fixation-like data in 2D
+  - `MultiPassMovingAverage2D`: Multiple passes of a specified filter in 2D
 
 #### Builders
 
 - `SmootherBuilder`: Entry point for creating smoothers
   - `Smoother1DBuilder`: For 1D smoothers
     - `Smoother1DContinuousBuilder`: For continuous 1D smoothers
+  - `Smoother2DBuilder`: For 2D smoothers
+    - `Smoother2DContinuousBuilder`: For continuous 2D smoothers
 
 ## 📄 License
 
@@ -139,7 +150,7 @@ This project is licensed under the GNU General Public License v3.0 (GPL-3.0) - s
 
 ## 🙏 Acknowledgements
 
-- NumPy for efficient numerical operations
+NumPy for efficient numerical operations
 
 ## 📬 Contact
 
