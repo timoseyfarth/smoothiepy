@@ -87,17 +87,17 @@ body:
     attributes:
       label: Python version
       options:
-        - label: 3.10
-        - label: 3.11
-        - label: 3.12
-        - label: 3.13
-        - label: 3.14
+        - label: "3.10"
+        - label: "3.11"
+        - label: "3.12"
+        - label: "3.13"
+        - label: "3.14"
 
   - type: input
     id: lib-version
     attributes:
       label: Library version (e.g. smoothiepy==0.4.2)
-
+  
   - type: markdown
     attributes:
       value: |
