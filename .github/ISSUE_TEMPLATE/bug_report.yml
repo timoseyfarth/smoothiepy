@@ -1,0 +1,152 @@
+name: "🐛 Bug report"
+description: "Report unexpected behavior or issues"
+title: "[BUG]"
+labels: [bug]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐞 Describe the Bug
+        
+        > [!NOTE]
+        > **What happened?**
+        >
+        > *Example: When using the `GaussianMovingAverage` with a small window size, the filter returns NaN values on the first few inputs instead of handling edge cases gracefully.*
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug description
+      placeholder: Describe what happened
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🔁 Steps to Reproduce
+        
+        > [!NOTE]
+        > **How can we reproduce the issue?**
+        >
+        > *Example:*
+        > 1. *Create a new `GaussianMovingAverage(window_size=2)`*
+        > 2. *Call `.add_and_get(1.0)`*
+        > 3. *Call `.add_and_get(0.0)`*
+        > 4. *Observe the output is `NaN` instead of a smoothed value*
+
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. 
+        2. 
+        3. 
+        4.
+      render: bash
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ✅ Expected Behavior
+
+        > [!NOTE]
+        > **What did you expect to happen instead?**
+        >
+        > *Example: The filter should return a value even with fewer samples than the window size. Ideally a weighted average over available data.*
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      placeholder: Describe what you expected to happen
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 💻 Environment Info
+
+  - type: checkboxes
+    id: os-info
+    attributes:
+      label: OS (please provide version in Additional Context)
+      options:
+        - label: Windows
+        - label: macOS
+        - label: Linux
+
+  - type: checkboxes
+    id: python-version
+    attributes:
+      label: Python version
+      options:
+        - label: "3.10"
+        - label: "3.11"
+        - label: "3.12"
+        - label: "3.13"
+        - label: "3.14"
+
+  - type: input
+    id: lib-version
+    attributes:
+      label: Library version (e.g. smoothiepy==0.4.2)
+  
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > You can get this info using:
+        > ```bash
+        > python --version
+        > pip show smoothiepy
+        > ```
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 📷 Screenshots or Output (Optional)
+
+        > [!NOTE]
+        > **Any stack traces, logs, or screenshots**
+        >
+        > *Example:*
+        > ```python
+        > RuntimeWarning: invalid value encountered in scalar divide
+        > return weighted_sum / cur_weights_sum
+        > ```
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      placeholder: Paste any stack traces or logs here (redact sensitive info if needed)
+      render: text
+
+  - type: markdown
+    attributes:
+      value: |
+        > [!CAUTION]
+        > If your output includes sensitive data, consider redacting it before sharing.
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧩 Additional Context (Optional)
+
+        > [!NOTE]
+        > **Anything else that helps explain the problem.**
+        >
+        > *Example: This only happens when using `build()` followed by processing a list of length < window size.*
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      placeholder: Any other details, links, related issues, etc.
