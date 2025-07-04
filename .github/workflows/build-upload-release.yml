@@ -1,4 +1,4 @@
-name: Publish Python Package
+name: Build and Upload Python Package to GitHub release and PyPi
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   publish:
-    name: Upload to PyPI
+    name: Build & Upload to GitHub / PyPI
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -27,8 +27,15 @@ jobs:
           pip install pdm[pdm-publish]
           pdm install
 
-      - name: Build package with PDM
+      - name: Build project
         run: pdm build
+
+      - name: Upload artifacts to GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
 
       - name: Publish to PyPI
         run: pdm publish --no-build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
