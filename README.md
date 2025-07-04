@@ -1,4 +1,4 @@
-![Logo SmoothiePy](https://github.com/user-attachments/assets/74e96edd-efe9-4a76-9f13-499c7f5ea551)
+<img src="https://github.com/user-attachments/assets/74e96edd-efe9-4a76-9f13-499c7f5ea551" alt="Logo SmoothiePy" width="300"/>
 
 [![Status](https://img.shields.io/badge/status-alpha-lightblue)]()
 [![PyPI version](https://img.shields.io/pypi/v/smoothiepy)](https://pypi.org/project/smoothiepy/)
