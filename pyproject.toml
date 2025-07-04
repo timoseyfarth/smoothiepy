@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "smoothiepy"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
     {name = "Timo Seyfarth", email = "timo@seyfarth.dev"}
 ]
