@@ -11,7 +11,7 @@ authors = [
 description = "Smooth real-time data streams like eye tracking or sensor input with this lightweight package."
 readme = "README.md"
 requires-python = ">=3.10.0"
-license = "GPL-3.0-or-later"
+license = "LGPL-3.0-or-later"
 license-files = ["LICEN[CS]E*"]
 keywords = [
     # Core themes
@@ -61,7 +61,6 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=2.1.0",
-    "typing_extensions>=4.0.0",
 ]
 
 [tool.pdm]
@@ -87,7 +86,7 @@ pythonpath = [
 
 [tool.pylint.master]
 ignore = ["tests", ".venv"]
-ignore-patterns = ["test_.*\\.py$", ".*_test\\.py$"]
+ignore-patterns = ["test_.*\\.py$", ".*_test\\.py$", "__init__\\.py$"]
 init-hook = "import sys; sys.path.append('./')"
 jobs = 4
 

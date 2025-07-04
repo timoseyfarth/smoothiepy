@@ -38,8 +38,7 @@ SmoothiePy requires Python 3.10 or later.
 Here's a simple example of how to use SmoothiePy to smooth a data stream:
 
 ```python
-from smoothiepy.smoother.builder import SmootherBuilder
-from smoothiepy.filter.filter1d import ExponentialMovingAverageFilter1D
+from smoothiepy import SmootherBuilder, ExponentialMovingAverageFilter1D
 
 # Create a smoother with an exponential moving average filter
 smoother = (
@@ -91,8 +90,7 @@ Many more filters are work in progress, including advanced filters like Kalman f
 SmoothiePy uses a builder pattern to create smoothers, making it easy to configure and chain multiple filters:
 
 ```python
-from smoothiepy.smoother.builder import SmootherBuilder
-from smoothiepy.filter.filter1d import SimpleMovingAverageFilter1D, GaussianAverageFilter1D
+from smoothiepy import SmootherBuilder, SimpleMovingAverageFilter1D, GaussianAverageFilter1D
 
 # Create a smoother with multiple filters
 smoother = (
@@ -107,50 +105,42 @@ smoother = (
 
 ## 📚 Documentation
 
-For detailed documentation, visit our [GitHub Wiki](https://github.com/timoseyfarth/smoothiepy/wiki).
-Coming soon...
+For detailed documentation, visit the [GitHub Wiki](https://github.com/timoseyfarth/smoothiepy/wiki).
+Work in progress...
 
 ### API Reference
 
-#### Filters
+#### 1D Filters
 
-- `Filter1D`: Base class for one-dimensional filters
-  - `OffsetFilter1D`: Adds a constant offset
-  - `SimpleMovingAverageFilter1D`: Simple arithmetic mean
-  - `WeightedMovingAverageFilter1D`: Linearly decreasing weights
-  - `GaussianAverageFilter1D`: Gaussian weighting function
-  - `MedianAverageFilter1D`: Median of values
-  - `ExponentialMovingAverageFilter1D`: Exponential weighting
-  - `CumulativeMovingAverageFilter1D`: Cumulative average
-  - `FixationSmoothFilter1D`: For fixation-like data
-  - `MultiPassMovingAverage1D`: Multiple passes of a specified filter
+- `OffsetFilter1D`: Adds a constant offset
+- `SimpleMovingAverageFilter1D`: Simple arithmetic mean
+- `WeightedMovingAverageFilter1D`: Linearly decreasing weights
+- `GaussianAverageFilter1D`: Gaussian weighting function
+- `MedianAverageFilter1D`: Median of values
+- `ExponentialMovingAverageFilter1D`: Exponential weighting
+- `CumulativeMovingAverageFilter1D`: Cumulative average
+- `FixationSmoothFilter1D`: For fixation-like data
+- `MultiPassMovingAverage1D`: Multiple passes of a specified filter
 
-- `Filter2D`: Base class for two-dimensional filters
-  - `OffsetFilter2D`: Adds a constant offset in 2D
-  - `SimpleMovingAverageFilter2D`: Simple arithmetic mean in 2D
-  - `WeightedMovingAverageFilter2D`: Linearly decreasing weights in 2D
-  - `GaussianAverageFilter2D`: Gaussian weighting function in 2D
-  - `MedianAverageFilter2D`: Median of values in 2D
-  - `ExponentialMovingAverageFilter2D`: Exponential weighting in 2D
-  - `CumulativeMovingAverageFilter2D`: Cumulative average in 2D
-  - `FixationSmoothFilter2D`: For fixation-like data in 2D
-  - `MultiPassMovingAverage2D`: Multiple passes of a specified filter in 2D
+#### 2D Filters
 
-#### Builders
+- `OffsetFilter2D`: Adds a constant offset in 2D
+- `SimpleMovingAverageFilter2D`: Simple arithmetic mean in 2D
+- `WeightedMovingAverageFilter2D`: Linearly decreasing weights in 2D
+- `GaussianAverageFilter2D`: Gaussian weighting function in 2D
+- `MedianAverageFilter2D`: Median of values in 2D
+- `ExponentialMovingAverageFilter2D`: Exponential weighting in 2D
+- `CumulativeMovingAverageFilter2D`: Cumulative average in 2D
+- `FixationSmoothFilter2D`: For fixation-like data in 2D
+- `MultiPassMovingAverage2D`: Multiple passes of a specified filter in 2D
+
+#### Builder
 
 - `SmootherBuilder`: Entry point for creating smoothers
-  - `Smoother1DBuilder`: For 1D smoothers
-    - `Smoother1DContinuousBuilder`: For continuous 1D smoothers
-  - `Smoother2DBuilder`: For 2D smoothers
-    - `Smoother2DContinuousBuilder`: For continuous 2D smoothers
 
 ## 📄 License
 
-This project is licensed under the GNU General Public License v3.0 (GPL-3.0) - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgements
-
-NumPy for efficient numerical operations
+This project is licensed under the GNU Lesser General Public License v3.0 (LGPL-3.0) — see the LICENSE file in the git repo for details.
 
 ## 📬 Contact
 

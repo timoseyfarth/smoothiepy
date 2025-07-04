@@ -1,9 +1,9 @@
 """
 Contains the one-dimensional filters used for signal processing.
 """
+import warnings
 from abc import ABC, abstractmethod
 import numpy as np
-from typing_extensions import deprecated
 
 from smoothiepy.filter.basefilter import MovingAverageType, Filter1D
 from smoothiepy.smoother.builder import SmootherBuilder
@@ -11,13 +11,13 @@ from smoothiepy.smoother.builder import SmootherBuilder
 
 # TODO versions for list data -> also account for future data
 
-@deprecated("Filter has no use, why would you use it?")
 class UselessFilter1D(Filter1D):
     """
     A filter that does not perform any filtering.
     It simply returns the input data as is.
     """
     def __init__(self):
+        warnings.warn("The UselessFilter1D class is deprecated.")
         super().__init__(window_size=1)
 
     def _process_next(self, buffer: np.array) -> float | int:
