@@ -18,6 +18,7 @@ class Smoother(ABC):
     """
     def __init__(self):
         self.filter_list: list[Filter] = []
+        self.is_smoother_built = False
 
     @abstractmethod
     def attach_filter(self, filter_obj: Filter) -> None:
@@ -28,14 +29,19 @@ class Smoother(ABC):
         :type filter_obj: Filter
         """
 
-    @abstractmethod
-    def build(self):
+    def build(self) -> None:
         """
-        Builds the final configuration of the smoother, setting up the filters
-        and their parameters as needed.
+        Builds the final configuration of the smoother.
+        """
+        self.is_smoother_built = True
+        self._build_internal()
 
-        :raises NotImplementedError: If the subclass does not implement this method.
+    @abstractmethod
+    def _build_internal(self) -> None:
         """
+        Internal method to build the smoother's configuration.
+        """
+
 
 
 class Smoother1D(Smoother, ABC):
@@ -75,11 +81,8 @@ class Smoother1DContinuous(Smoother1D):
         super().__init__()
         self.last_filtered_value: float | int = 0.0
 
-    def build(self):
+    def _build_internal(self) -> None:
         pass
-        # self.filter_list[-1].set_buffer_size(1)
-        # for cur_filter, next_filter in zip(self.filter_list, self.filter_list[1:]):
-        #     cur_filter.set_buffer_size(next_filter.window_size)
 
     def add_and_get(self, data: float | int) -> float | int:
         """
@@ -153,7 +156,7 @@ class Smoother2DContinuous(Smoother2D):
         super().__init__()
         self.last_filtered_value: tuple[float | int, float | int] = (0.0, 0.0)
 
-    def build(self):
+    def _build_internal(self) -> None:
         pass
 
     def add_and_get(self, data_x: float | int, data_y: float | int) \
@@ -195,6 +198,150 @@ class Smoother2DContinuous(Smoother2D):
         """
         return self.last_filtered_value
 
-# class SignalSmootherSeparateLists1D:
-#     def filter_list(self, signal: list[float]) -> list[float]:
-#         return signal
+
+class Smoother1DList(Smoother1D):
+    """
+    The Smoother1DList class is a specialized implementation for applying 1D smoothing
+    on a list-based signal.
+
+    It is particularly suitable for scenarios requiring processing of a signal that is not
+    continuous, but you have a batch of data points for smooth through filters.
+    """
+    def __init__(self):
+        super().__init__()
+        self.__continuous_smoother = None
+
+    def attach_filter(self, filter_obj: Filter) -> None:
+        """
+        Attaches a filter object to the instance.
+
+        If the smoother is not built yet, it will not attach the filter to the internal
+        continuous smoother. This is because the continuous smoother will be
+        built only after the `build` method is called and its state is reset explicitly.
+
+        :param filter_obj: The filter object to be attached.
+        :type filter_obj: Filter
+        """
+        super().attach_filter(filter_obj)
+        if not self.is_smoother_built:
+            return
+        self.__continuous_smoother.attach_filter(filter_obj)
+
+    def _build_internal(self) -> None:
+        self.__reset_state()
+
+    def __add_filters_to_continuous_smoother(self) -> None:
+        """
+        Adds filters from the filter list to the continuous smoother.
+
+        This method iterates over the items in the `filter_list` attribute
+        and attaches each filter object to the `__continuous_smoother` object.
+        """
+        for filter_obj in self.filter_list:
+            self.__continuous_smoother.attach_filter(filter_obj)
+
+    def __reset_state(self) -> None:
+        """
+        Resets the internal state of the instance by reinitializing attributes to their
+        default values. This involves deleting the previous smoother and replacing
+        it with a new instance to ensure all processing starts with a clean state.
+        All filters attached to the smoother are reattached to the new instance.
+        """
+        del self.__continuous_smoother
+        self.__continuous_smoother = Smoother1DContinuous()
+        self.__add_filters_to_continuous_smoother()
+
+    def apply_filter(self, signal: list[float | int]) -> list[float | int]:
+        """
+        Applies a filtering process to a given signal and returns the filtered signal
+        after processing through all the attached filters.
+
+        :param signal: A list of numerical data (float or int) representing the signal
+                       to be filtered.
+        :type signal: list[float | int]
+        :return: A list of numerical data (float or int) representing the filtered signal.
+        :rtype: list[float | int]
+        """
+        result = []
+        for data in signal:
+            filtered = self.__continuous_smoother.add_and_get(data)
+            result.append(filtered)
+        return result
+
+
+class Smoother2DList(Smoother2D):
+    """
+    The Smoother2DList class is a specialized implementation for applying 2D smoothing
+    on a list-based signal.
+
+    It is particularly suitable for scenarios requiring processing of a signal that is not
+    continuous, but you have a batch of data points for smooth through filters.
+    """
+    def __init__(self):
+        super().__init__()
+        self.__continuous_smoother = None
+
+    def attach_filter(self, filter_obj: Filter) -> None:
+        """
+        Attaches a filter object to the instance.
+
+        If the smoother is not built yet, it will not attach the filter to the internal
+        continuous smoother. This is because the continuous smoother will be
+        built only after the `build` method is called and its state is reset explicitly.
+
+        :param filter_obj: The filter object to be attached.
+        :type filter_obj: Filter
+        """
+        super().attach_filter(filter_obj)
+        if not self.is_smoother_built:
+            return
+        self.__continuous_smoother.attach_filter(filter_obj)
+
+    def _build_internal(self) -> None:
+        self.__reset_state()
+
+    def __add_filters_to_continuous_smoother(self) -> None:
+        """
+        Adds filters from the filter list to the continuous smoother.
+
+        This method iterates over the items in the `filter_list` attribute
+        and attaches each filter object to the `__continuous_smoother` object.
+        """
+        for filter_obj in self.filter_list:
+            self.__continuous_smoother.attach_filter(filter_obj)
+
+    def __reset_state(self) -> None:
+        """
+        Resets the internal state of the instance by reinitializing attributes to their
+        default values. This involves deleting the previous smoother and replacing
+        it with a new instance to ensure all processing starts with a clean state.
+        All filters attached to the smoother are reattached to the new instance.
+        """
+        del self.__continuous_smoother
+        self.__continuous_smoother = Smoother2DContinuous()
+        self.__add_filters_to_continuous_smoother()
+
+    def apply_filter(self, signal_x: list[float | int], signal_y: list[float | int]) \
+            -> tuple[list[float | int], list[float | int]]:
+        """
+        Applies a filtering process to a given signal (x and y direction) and returns
+        the filtered signal after processing through all the attached filters.
+
+
+
+        :param signal_x: A list of numerical data (float or int) representing the signal
+                       to be filtered. This is the x-component of the signal.
+        :type signal_x: list[float | int]
+        :param signal_y: A list of numerical data (float or int) representing the signal
+                       to be filtered. This is the y-component of the signal.
+        :type signal_y: list[float | int]
+        :return: A list of numerical data (float or int) representing the filtered signal.
+        :rtype: list[float | int]
+        """
+        result_x = []
+        result_y = []
+        for data_x, data_y in zip(signal_x, signal_y):
+            filtered_x, filtered_y = self.__continuous_smoother.add_and_get(data_x, data_y)
+            result_x.append(filtered_x)
+            result_y.append(filtered_y)
+        return result_x, result_y

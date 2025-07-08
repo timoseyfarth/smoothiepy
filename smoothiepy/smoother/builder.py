@@ -2,7 +2,7 @@
 Contains the helper classes to build a signal smoother.
 """
 from smoothiepy.filter.basefilter import Filter1D, Filter2D
-from smoothiepy.smoother.smoother import Smoother1DContinuous, Smoother2DContinuous
+from smoothiepy.smoother.smoother import Smoother1DContinuous, Smoother2DContinuous, Smoother1DList, Smoother2DList
 
 
 class SmootherBuilder:
@@ -43,6 +43,10 @@ class Smoother1DBuilder:
     def continuous() -> 'Smoother1DContinuousBuilder':
         return Smoother1DContinuousBuilder()
 
+    @staticmethod
+    def list_based() -> 'Smoother1DListBuilder':
+        return Smoother1DListBuilder()
+
 
 class Smoother2DBuilder:
     """
@@ -54,8 +58,12 @@ class Smoother2DBuilder:
     methods.
     """
     @staticmethod
-    def set_continuous() -> 'Smoother2DContinuousBuilder':
+    def continuous() -> 'Smoother2DContinuousBuilder':
         return Smoother2DContinuousBuilder()
+
+    @staticmethod
+    def list_based() -> 'Smoother2DListBuilder':
+        return Smoother2DListBuilder()
 
 
 class Smoother1DContinuousBuilder:
@@ -98,13 +106,39 @@ class Smoother2DContinuousBuilder:
         return self.__smoother
 
 
-# class SignalSmootherBuilder1DList:
-#     def __init__(self):
-#         self.smoother = SignalSmootherSeparateLists1D()
-#
-#     def attach_filter(self, filter_obj: BaseFilter1D):
-#         self.smoother.attach_filter(filter_obj)
-#
-#     def build(self):
-#         self.smoother.build()
-#         return self.smoother
+class Smoother1DListBuilder:
+    """
+    A builder class for creating a 1D signal smoother that operates on lists.
+
+    This class allows the attachment of filters and builds a smoother that
+    processes data from separate lists, enabling more flexible data handling.
+    """
+    def __init__(self):
+        self.__smoother = Smoother1DList()
+
+    def attach_filter(self, filter_obj: Filter1D) -> 'Smoother1DListBuilder':
+        self.__smoother.attach_filter(filter_obj)
+        return self
+
+    def build(self) -> Smoother1DList:
+        self.__smoother.build()
+        return self.__smoother
+
+
+class Smoother2DListBuilder:
+    """
+    A builder class for creating a 2D signal smoother that operates on lists.
+
+    This class allows the attachment of filters and builds a smoother that
+    processes data from separate lists, enabling more flexible data handling.
+    """
+    def __init__(self):
+        self.__smoother = Smoother2DList()
+
+    def attach_filter(self, filter_obj: Filter2D) -> 'Smoother2DListBuilder':
+        self.__smoother.attach_filter(filter_obj)
+        return self
+
+    def build(self) -> Smoother2DList:
+        self.__smoother.build()
+        return self.__smoother

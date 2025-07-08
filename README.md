@@ -61,6 +61,28 @@ smoothed_value = smoother.add_and_get(3.0)
 print(f"Smoothed value: {smoothed_value}")
 ```
 
+You can also use a list-based smoother for batch processing of data:
+
+```python
+from smoothiepy import SmootherBuilder, MedianAverageFilter1D
+
+# Create a smoother with a median moving average filter
+smoother = (
+    SmootherBuilder()
+    .one_dimensional()
+    .list_based()
+    .attach_filter(MedianAverageFilter1D(window_size=2))
+    .build()
+)
+
+data_list = [1.0, 2.0, 3.0]  # Example data list
+
+result_list = smoother.apply_filter(data_list)
+
+print(f"Original data list: {data_list}")
+print(f"Smoothed data list: {result_list}")
+```
+
 ## ✨ Features
 
 ### Available Filters
@@ -137,6 +159,11 @@ Work in progress...
 #### Builder
 
 - `SmootherBuilder`: Entry point for creating smoothers
+
+## 🛠️ Development
+
+### Features work in progress:
+- More filters 1D and 2D, including more advanced ones (no specific list exists)
 
 ## 📄 License
 

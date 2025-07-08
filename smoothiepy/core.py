@@ -1,8 +1,8 @@
 """
 Main module for the application.
 """
+from smoothiepy import MedianAverageFilter1D
 from smoothiepy.smoother.builder import SmootherBuilder
-from smoothiepy.filter.filter1d import ExponentialMovingAverageFilter1D
 
 def main() -> None:
     """
@@ -11,21 +11,19 @@ def main() -> None:
     smoother = (
         SmootherBuilder()
         .one_dimensional()
-        .continuous()
-        .attach_filter(ExponentialMovingAverageFilter1D(alpha=0.25))
+        .list_based()
+        .attach_filter(MedianAverageFilter1D(window_size=2))
         .build()
     )
 
     print("Init finished")
 
-    smoother.add(40.0)
-    print(f"Smoothed value 1: {smoother.get()}")
-    smoother.add(60.0)
-    print(f"Smoothed value 2: {smoother.get()}")
-    smoother.add(100.0)
-    print(f"Smoothed value 3: {smoother.get()}")
-    smoother.add(3)
-    print(f"Smoothed value 4: {smoother.get()}")
+    data_list = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
+
+    result_list = smoother.apply_filter(data_list)
+
+    print(f"Original data: {data_list}")
+    print(f"Filtered data: {result_list}")
 
 
 if __name__ == "__main__":
